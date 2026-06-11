@@ -1,0 +1,25 @@
+# Dependencies (don't copy these)
+node_modules
+npm-debug.log
+
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+.env.local
+
+# Build outputs
+dist
+build
+
+# Docker
+Dockerfile
+.dockerignore
+docker-entrypoint.sh
+README.md
+
+# Temp files
+*.log
+.DS_Store
