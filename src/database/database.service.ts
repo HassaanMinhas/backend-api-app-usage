@@ -19,13 +19,10 @@ export class DatabaseService implements OnModuleInit {
       database: this.config.get('PG_DATABASE'),
     };
 
-    // Only enable SSL in production or when explicitly configured
-    if (!isDevelopment && this.config.get('PG_SSL_ENABLED') === 'true') {
-      poolConfig.ssl = {
-        rejectUnauthorized: false
-      };
-    }
-
+  poolConfig.ssl = {
+    rejectUnauthorized: false,
+  };
+  
     this.pool = new Pool(poolConfig);
   }
 
