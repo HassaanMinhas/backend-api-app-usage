@@ -57,7 +57,7 @@ if (existingResult.rows.length > 0) {
 async getUserActivity() {
   try {
     const query = `
-      SELECT
+        SELECT
         ua.activity_id,
         ua.user_id,
         u.user_name,
@@ -66,7 +66,9 @@ async getUserActivity() {
         ua.application_name,
         ua.start_time,
         ua.end_time,
-        ua.duration_minutes,
+
+        EXTRACT(EPOCH FROM (ua.end_time - ua.start_time))::int AS duration_seconds,
+
         ua.pid
       FROM user_activity ua
       JOIN users u ON u.user_id = ua.user_id
