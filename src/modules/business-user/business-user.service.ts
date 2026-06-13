@@ -1,8 +1,5 @@
 import { UnauthorizedException, BadRequestException, Injectable, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
-import { randomBytes } from 'crypto';
 import { DatabaseService } from '../../database/database.service';
-import { ForbiddenException } from '@nestjs/common';
 import { InsertUserActivityDto } from './dto/insert-user-activity.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 
