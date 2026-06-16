@@ -15,5 +15,10 @@ export class HeartbeatController {
     return this.heartbeatService.ping(query);
   }
 
+   @Get('users-status')
+  async getUsersStatus() {
+    return this.heartbeatService.getUsersStatus();
+  }
+
   
 }

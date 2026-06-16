@@ -1,4 +1,4 @@
-/*import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
 
@@ -34,7 +34,7 @@ export class DatabaseService implements OnModuleInit {
   }
 }
 
-*/
+/*
 
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Pool } from 'pg';
@@ -69,3 +69,4 @@ export class DatabaseService implements OnModuleInit {
   }
 }
 
+*/
