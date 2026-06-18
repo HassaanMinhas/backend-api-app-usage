@@ -56,6 +56,7 @@ export class HeartbeatService {
       throw error;
     }
   }
+ 
 
   async getUsersStatus() {
   try {
@@ -73,9 +74,47 @@ export class HeartbeatService {
 
     const serverTime = new Date();
 
+const formatLastOnline = (diffSeconds: number): string => {
+  const minutesTotal = Math.floor(diffSeconds / 60);
+  const seconds = diffSeconds % 60;
+
+  const hoursTotal = Math.floor(minutesTotal / 60);
+  const minutes = minutesTotal % 60;
+
+  const days = Math.floor(hoursTotal / 24);
+  const hours = hoursTotal % 24;
+
+  // less than a minute
+  if (minutesTotal < 1) {
+    return `Last online: ${diffSeconds} seconds ago`;
+  }
+
+  // less than 1 hour
+  if (hoursTotal < 1) {
+    return `Last online: ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  }
+
+  // less than 24 hours
+  if (days < 1) {
+    if (minutes === 0) {
+      return `Last online: ${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    }
+
+    return `Last online: ${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  }
+
+  // 1 day+
+  if (hours === 0 && minutes === 0) {
+    return `Last online: ${days} day${days !== 1 ? 's' : ''} ago`;
+  }
+
+  return `Last online: ${days} day${days !== 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+};
+
     const users = result.rows.map((user) => {
       let status = 'offline';
       let differenceSeconds: number | null = null;
+      let last_online_text: string | null = null;
 
       if (user.last_seen) {
         const lastSeen = new Date(user.last_seen);
@@ -84,7 +123,14 @@ export class HeartbeatService {
           (serverTime.getTime() - lastSeen.getTime()) / 1000,
         );
 
-        status = differenceSeconds <= 35 ? 'online' : 'offline';
+        // online threshold
+        if (differenceSeconds <= 35) {
+          status = 'online';
+          last_online_text = 'Online now';
+        } else {
+          status = 'offline';
+          last_online_text = formatLastOnline(differenceSeconds);
+        }
       }
 
       return {
@@ -94,6 +140,7 @@ export class HeartbeatService {
         last_seen: user.last_seen,
         difference_seconds: differenceSeconds,
         status,
+        last_online_text,
       };
     });
 
@@ -110,6 +157,7 @@ export class HeartbeatService {
     throw error;
   }
 }
+
 
 
 }
