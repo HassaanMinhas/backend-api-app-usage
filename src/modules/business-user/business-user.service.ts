@@ -52,7 +52,7 @@ if (existingResult.rows.length > 0) {
 
 
 async getUserActivity() {
-  /*
+
   try {
     const query = `
         SELECT
@@ -85,14 +85,14 @@ async getUserActivity() {
     throw new InternalServerErrorException('Failed to fetch user activity');
   }
 
-  */
 
+/*
   return {
      success: true,
     total_records: 0,
     activities: [],
     };
-
+*/
 
 }
 
