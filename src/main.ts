@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Set global API prefix
-  app.setGlobalPrefix('apiss');
+  app.setGlobalPrefix('apis');
 
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS
