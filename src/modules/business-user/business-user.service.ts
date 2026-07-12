@@ -30,9 +30,14 @@ if (existingResult.rows.length > 0) {
 }
 
   // 3. Otherwise insert new user
-  const query = `
-    INSERT INTO users (user_id, user_name, pc_name)
-    VALUES ($1, $2, $3)
+   const query = `
+    INSERT INTO users (
+      user_id,
+      user_name,
+      pc_name,
+      created_at
+    )
+    VALUES ($1, $2, $3, NOW())
     RETURNING *;
   `;
 
@@ -45,7 +50,7 @@ if (existingResult.rows.length > 0) {
 
   return {
     message: 'User inserted successfully',
-    data: result[0],
+      data: result.rows[0],    
   };
 }
 
