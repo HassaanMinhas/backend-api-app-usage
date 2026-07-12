@@ -14,90 +14,51 @@ export class HeartbeatService {
   constructor(private db: DatabaseService) {}
 
  async ping(query: PingQueryDto) {
-  let { user_id } = query;
+    const { user_id } = query;
 
-  if (!user_id) {
-    throw new BadRequestException('user_id is required');
-  }
-
-  // Map deleted IDs to retained IDs
-  const userIdMap: Record<string, string> = {
-    // qcvr1
-    '0bfc21fc1fab45fe9694c8a2ad6c99e3': '5906d3ea0ecb440e93f505770a4db807',
-    '2cb1e6e875824f12a67531ca17ec4ebe': '5906d3ea0ecb440e93f505770a4db807',
-    '5e5b63a25acb47d0a88394d4b6aa12ff': '5906d3ea0ecb440e93f505770a4db807',
-    '6bc8653048e84a3181d55719164b4011': '5906d3ea0ecb440e93f505770a4db807',
-    '84835018647c4e7ea19e178862dd549f': '5906d3ea0ecb440e93f505770a4db807',
-    'bbea8b33d78b41b8a69919fade60ddb6': '5906d3ea0ecb440e93f505770a4db807',
-
-    // qc4
-    '859fb87570754754a0c30e6830e7d35d': '1394dbdc1c47483f91ae3b6118514638',
-
-    // qc2
-    'b492fe3ea2b54678bdc20e8b16a37ec8': '15842cb8fd1f4df589c42af54959ec12',
-
-    // ad1
-    'd481d00faf464d528209834758531e14': '51229b3f99e64f519df2283882791edc',
-
-    // ad2
-    '2f56e905e6d24f9e828cd9599fb12217': '7cccbc6013084f62a544ed333876c303',
-
-    // ad3
-    '06405b0409574bc78c23c88b597a9f20': 'abf0295bc51e42a49fc2634a4514761c',
-
-    // qc3
-    '8209d15c90764827949f6ebfce79c09f': 'b87db3ba67b447b5a15355902919cff7',
-    'af5f2dec33814d598341fedaf390bfb9': 'b87db3ba67b447b5a15355902919cff7',
-
-    // qc1
-    '75e9343ad1564fc499ad13cc37c75146': 'dcdc2329674545d0947c3b5b40d8e4a7',
-    '7dea00ec65e84976b04396be741a333f': 'dcdc2329674545d0947c3b5b40d8e4a7',
-
-    // ad4
-    'ef6c99e52223471c974b540a8edf9e8e': '917c22c11f5947ea93750cb17d40a9fa',
-  };
-
-  // Replace deleted ID with retained ID
-  user_id = userIdMap[user_id] ?? user_id;
-
-  try {
-    const result = await this.db.query(
-      `
-      UPDATE users
-      SET last_seen = NOW()
-      WHERE user_id = $1
-      RETURNING user_id, last_seen;
-      `,
-      [user_id],
-    );
-
-    if (result.rowCount === 0) {
-      return {
-        success: false,
-        message: 'User not found',
-        data: null,
-      };
+    if (!user_id) {
+      throw new BadRequestException('user_id is required');
     }
 
-    this.logger.log(`Heartbeat received for user: ${user_id}`);
+    try {
+      const result = await this.db.query(
+        `
+        UPDATE users
+        SET last_seen = NOW()
+        WHERE user_id = $1
+        RETURNING user_id, last_seen;
+        `,
+        [user_id],
+      );
 
-    return {
-      success: true,
-      message: 'ping_response',
-      server_time: new Date().toISOString(),
-      data: result.rows[0],
-    };
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : String(error);
+      // USER NOT FOUND CASE
+      if (result.rowCount === 0) {
+        return {
+          success: false,
+          message: 'User not found',
+          data: null,
+        };
+      }
 
-    this.logger.error(`Heartbeat error: ${message}`);
-    throw error;
+      this.logger.log(`Heartbeat received for user: ${user_id}`);
+
+      return {
+        success: true,
+        message: 'ping_response',
+        server_time: new Date().toISOString(),
+        data: result.rows[0],
+      };
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : String(error);
+
+      this.logger.error(`Heartbeat error: ${message}`);
+      throw error;
+    }
   }
-}
  
 
-async getUsersStatus() {
+ async getUsersStatus() {
   try {
     const result = await this.db.query(
       `
@@ -113,97 +74,75 @@ async getUsersStatus() {
 
     const serverTime = new Date();
 
-    const formatLastOnline = (diffSeconds: number): string => {
-      const minutesTotal = Math.floor(diffSeconds / 60);
-      const hoursTotal = Math.floor(minutesTotal / 60);
-      const minutes = minutesTotal % 60;
-      const days = Math.floor(hoursTotal / 24);
-      const hours = hoursTotal % 24;
+const formatLastOnline = (diffSeconds: number): string => {
+  const minutesTotal = Math.floor(diffSeconds / 60);
+  const seconds = diffSeconds % 60;
 
-      if (minutesTotal < 1) {
-        return `Last online: ${diffSeconds} seconds ago`;
-      }
+  const hoursTotal = Math.floor(minutesTotal / 60);
+  const minutes = minutesTotal % 60;
 
-      if (hoursTotal < 1) {
-        return `Last online: ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-      }
+  const days = Math.floor(hoursTotal / 24);
+  const hours = hoursTotal % 24;
 
-      if (days < 1) {
-        if (minutes === 0) {
-          return `Last online: ${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  // less than a minute
+  if (minutesTotal < 1) {
+    return `Last online: ${diffSeconds} seconds ago`;
+  }
+
+  // less than 1 hour
+  if (hoursTotal < 1) {
+    return `Last online: ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  }
+
+  // less than 24 hours
+  if (days < 1) {
+    if (minutes === 0) {
+      return `Last online: ${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    }
+
+    return `Last online: ${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  }
+
+  // 1 day+
+  if (hours === 0 && minutes === 0) {
+    return `Last online: ${days} day${days !== 1 ? 's' : ''} ago`;
+  }
+
+  return `Last online: ${days} day${days !== 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+};
+
+    const users = result.rows.map((user) => {
+      let status = 'offline';
+      let differenceSeconds: number | null = null;
+      let last_online_text: string | null = null;
+
+      if (user.last_seen) {
+        const lastSeen = new Date(user.last_seen);
+
+        differenceSeconds = Math.floor(
+          (serverTime.getTime() - lastSeen.getTime()) / 1000,
+        );
+
+        // online threshold
+        if (differenceSeconds <= 35) {
+          status = 'online';
+          last_online_text = 'Online now';
+        } else {
+          status = 'offline';
+          last_online_text = formatLastOnline(differenceSeconds);
         }
-
-        return `Last online: ${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
       }
 
-      if (hours === 0 && minutes === 0) {
-        return `Last online: ${days} day${days !== 1 ? 's' : ''} ago`;
-      }
-
-      return `Last online: ${days} day${days !== 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-    };
-
-    // User IDs to exclude from API response
-    const deletedUserIds = new Set([
-      '0bfc21fc1fab45fe9694c8a2ad6c99e3',
-      '2cb1e6e875824f12a67531ca17ec4ebe',
-      '5e5b63a25acb47d0a88394d4b6aa12ff',
-      '6bc8653048e84a3181d55719164b4011',
-      '84835018647c4e7ea19e178862dd549f',
-      'bbea8b33d78b41b8a69919fade60ddb6',
-
-      '859fb87570754754a0c30e6830e7d35d',
-
-      'b492fe3ea2b54678bdc20e8b16a37ec8',
-
-      'd481d00faf464d528209834758531e14',
-
-      '2f56e905e6d24f9e828cd9599fb12217',
-
-      '06405b0409574bc78c23c88b597a9f20',
-
-      '8209d15c90764827949f6ebfce79c09f',
-      'af5f2dec33814d598341fedaf390bfb9',
-
-      '75e9343ad1564fc499ad13cc37c75146',
-      '7dea00ec65e84976b04396be741a333f',
-
-      'ef6c99e52223471c974b540a8edf9e8e',
-    ]);
-
-    const users = result.rows
-      .filter((user) => !deletedUserIds.has(user.user_id))
-      .map((user) => {
-        let status = 'offline';
-        let differenceSeconds: number | null = null;
-        let last_online_text: string | null = null;
-
-        if (user.last_seen) {
-          const lastSeen = new Date(user.last_seen);
-
-          differenceSeconds = Math.floor(
-            (serverTime.getTime() - lastSeen.getTime()) / 1000,
-          );
-
-          if (differenceSeconds <= 35) {
-            status = 'online';
-            last_online_text = 'Online now';
-          } else {
-            status = 'offline';
-            last_online_text = formatLastOnline(differenceSeconds);
-          }
-        }
-
-        return {
-          user_id: user.user_id,
-          user_name: user.user_name,
-          pc_name: user.pc_name,
-          last_seen: user.last_seen,
-          difference_seconds: differenceSeconds,
-          status,
-          last_online_text,
-        };
-      });
+      return {
+        user_id: user.user_id,
+        user_name: user.user_name,
+        pc_name: user.pc_name,
+        last_seen: user.last_seen,
+        difference_seconds: differenceSeconds,
+        status,
+        last_online_text,
+      };
+    });
 
     return {
       success: true,
